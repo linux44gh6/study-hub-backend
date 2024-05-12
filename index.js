@@ -30,6 +30,7 @@ app.get('/teacher',async(req,res)=>{
 
 const teacherCollection=client.db('studyHub').collection('teachers')
 const assignmentCollection=client.db('studyHub').collection('assignments')
+const submittedCollection=client.db('studyHub').collection('submitedData')
 async function run() {
   try {
 
@@ -86,13 +87,16 @@ async function run() {
     }
     const result=await assignmentCollection.updateOne(query,updatedDoc,options)
     res.send(result)
-    console.log(assignment);
-    console.log(query);
   })
 
-  //for details
 
-  app.get('')
+  //create rest api for submit data
+  app.post('/submits',async(req,res)=>{
+    const data=req.body
+    console.log(data);
+    const result=await submittedCollection.insertOne(data)
+    res.send(result)
+  })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
