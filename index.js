@@ -11,6 +11,7 @@ app.use(express.json())
 console.log(process.env.DB_PASS);
 console.log(process.env.DB_USER);
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { emit } = require('nodemon')
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pnsxsk9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
  
 const client = new MongoClient(uri, {
@@ -59,6 +60,39 @@ async function run() {
     res.send(result)
   })
   //get a single Item by id
+  app.get('/Assignment/:id',async(req,res)=>{
+    const id=req.params.id
+    const query={_id:new ObjectId(id)}
+    const result=await assignmentCollection.findOne(query)
+    res.send(result)
+  })
+
+  //update the assignment
+  app.patch('/Assignment2/:id',async(req,res)=>{
+    const assignment=req.body
+    const id=req.params.id
+    const query={_id:new ObjectId(id)}
+    const options = { upsert: true };
+    const updatedDoc={
+      $set:{
+        assign_title:assignment.assign_title,
+        email:assignment.email,
+        due_date:assignment.due_date,
+        category:assignment.category,
+        mark:assignment.mark,
+        description:assignment.description,
+        thumbnail_url:assignment.thumbnail_url
+      }
+    }
+    const result=await assignmentCollection.updateOne(query,updatedDoc,options)
+    res.send(result)
+    console.log(assignment);
+    console.log(query);
+  })
+
+  //for details
+
+  app.get('')
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
