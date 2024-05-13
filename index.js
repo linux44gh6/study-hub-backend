@@ -2,9 +2,15 @@ const express=require('express')
 const app=express()
 const cors=require('cors')
 const port=process.env.PORT||5000
+const cookieParser=require('cookie-parser')
 require('dotenv').config()
-
-app.use(cors())
+var jwt = require('jsonwebtoken');
+const corsOption={
+  origin:['http://localhost:5173'],
+  Credentials:true,
+  optionSuccessStatus:200,
+}
+app.use(cors(corsOption))
 app.use(express.json())
 
 //connect mongoDB
@@ -33,6 +39,14 @@ const assignmentCollection=client.db('studyHub').collection('assignments')
 const submittedCollection=client.db('studyHub').collection('submitedData')
 async function run() {
   try {
+//create jwt to token
+    app.post('/jwt',async(req,res)=>{
+          console.log(process.env.ACCESS_TOKEN);
+          const user=req.body
+          const token=jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'3d'})
+          res.cookie('token',token,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:process.env.NODE_ENV==='production'?'node':'strict'})
+          .send({success:true})
+        })
 
     app.get('/teacher',async(req,res)=>{
       const result=await teacherCollection.find().toArray()
@@ -142,6 +156,8 @@ async function run() {
     res.send(result)
   })
 
+
+  //implement the jwt
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
