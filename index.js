@@ -117,6 +117,31 @@ async function run() {
     const result=await submittedCollection.find(query).toArray()
     res.send(result)
   })
+  //get pending data by id
+
+  app.get('/mark/:id',async(req,res)=>{
+    const id=req.params.id
+    const query={_id:new ObjectId(id)}
+    const result=await submittedCollection.findOne(query)
+    res.send(result)
+  })
+  //update the pending assignment
+  app.patch('/mark2/:id',async(req,res)=>{
+    const TFeedBack=req.body
+    const id=req.params.id
+    const query={_id:new ObjectId(id)}
+    const options = { upsert: true };
+    const updatedDoc={
+      $set:{
+        obtain_mark:TFeedBack.obtain_mark,
+        feedBack:TFeedBack.feedBack,
+        status:TFeedBack.status
+      }
+    }
+    const result=await submittedCollection.updateOne(query,updatedDoc,options)
+    res.send(result)
+  })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
