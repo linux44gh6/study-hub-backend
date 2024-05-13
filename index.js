@@ -97,12 +97,31 @@ async function run() {
     const result=await submittedCollection.insertOne(data)
     res.send(result)
   })
+
+
+  //get data by email
+  app.get('/submitted/:email',async(req,res)=>{
+    const email=req.params.email
+    console.log(email);
+    const query={email:email}
+    const result=await submittedCollection.find(query).toArray()
+    res.send(result)
+  })
+
+
+  //read all pending data
+  app.get('/pending/:status',async(req,res)=>{
+    const status=req.params.status
+    console.log(status);
+    const query={status:status}
+    const result=await submittedCollection.find(query).toArray()
+    res.send(result)
+  })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
   
-   
   }
 }
 run().catch(console.dir);
