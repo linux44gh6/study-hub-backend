@@ -90,7 +90,14 @@ app.get('/logOut',async(req,res)=>{
 
   //get all assignment
   app.get('/allAssignment',async(req,res)=>{
-    const result=await assignmentCollection.find().toArray()
+    const filter=req.query.filter
+    console.log(filter);
+    let query={}
+    if(filter){
+      query={category:filter}
+      console.log(query);
+    }
+    const result=await assignmentCollection.find(query).toArray()
     res.send(result)
   })
 
