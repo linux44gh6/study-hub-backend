@@ -18,7 +18,7 @@ app.use(cookieParser())
 //create meddleWare
 const verifyToken=(req,res,next)=>{
   const token=req.cookies?.token
-  console.log(token);
+  // console.log(token);
   if(token){
     jwt.verify(token,process.env.ACCESS_TOKEN,(err,decoded)=>{
       if(err){
@@ -35,8 +35,8 @@ const verifyToken=(req,res,next)=>{
   }
 }
 //connect mongoDB
-console.log(process.env.DB_PASS);
-console.log(process.env.DB_USER);
+// console.log(process.env.DB_PASS);
+// console.log(process.env.DB_USER);
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { emit } = require('nodemon')
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.pnsxsk9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -63,7 +63,7 @@ async function run() {
 //create jwt to token
     app.post('/jwt',async(req,res)=>{
           const user=req.body
-          console.log(user);
+          // console.log(user);
           const token=jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'3d'})
           res.cookie('token',token,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:process.env.NODE_ENV==='production'?'none':'strict'})
           .send({success:true})
@@ -83,21 +83,31 @@ app.get('/logOut',async(req,res)=>{
    //post an assignment
   app.post('/assignment',async(req,res)=>{
     const assignment=req.body
-    console.log(assignment);
+    // console.log(assignment);
     const result=await assignmentCollection.insertOne(assignment)
     res.send(result)
   })
 
+//read the data count
+app.get('/assignmentCount',async(req,res)=>{
+  const result=await assignmentCollection.estimatedDocumentCount()
+  res.send({result})
+})
+
   //get all assignment
   app.get('/allAssignment',async(req,res)=>{
+    const size=parseInt(req.query.size)
+    const page=parseInt(req.query.page)
     const filter=req.query.filter
-    console.log(filter);
     let query={}
     if(filter){
       query={category:filter}
-      console.log(query);
+      // console.log(query);
     }
-    const result=await assignmentCollection.find(query).toArray()
+    const result=await assignmentCollection.find(query)
+    .skip(page*size)
+    .limit(size)
+    .toArray()
     res.send(result)
   })
 
@@ -141,7 +151,7 @@ app.get('/logOut',async(req,res)=>{
   //create rest api for submit data
   app.post('/submits',async(req,res)=>{
     const data=req.body
-    console.log(data);
+    // console.log(data);
     const result=await submittedCollection.insertOne(data)
     res.send(result)
   })
@@ -151,11 +161,11 @@ app.get('/logOut',async(req,res)=>{
   app.get('/submitted/:email',verifyToken,async(req,res)=>{
     const tokenEmail=req.user.email
     const email=req.params.email
-    console.log(tokenEmail,email);
+    // console.log(tokenEmail,email);
     if(tokenEmail!==email){
       return res.status(403).send({message:'forbidden access'})
     }
-    console.log(email);
+    // console.log(email);
     const query={email:email}
     const result=await submittedCollection.find(query).toArray()
     res.send(result)
@@ -165,7 +175,7 @@ app.get('/logOut',async(req,res)=>{
   //read all pending data
   app.get('/pending/:status',async(req,res)=>{
     const status=req.params.status
-    console.log(status);
+    // console.log(status);
     const query={status:status}
     const result=await submittedCollection.find(query).toArray()
     res.send(result)
