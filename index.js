@@ -5,14 +5,35 @@ const port=process.env.PORT||5000
 const cookieParser=require('cookie-parser')
 require('dotenv').config()
 var jwt = require('jsonwebtoken');
+
 const corsOption={
   origin:['http://localhost:5173'],
-  Credentials:true,
+  credentials:true,
   optionSuccessStatus:200,
 }
 app.use(cors(corsOption))
 app.use(express.json())
+app.use(cookieParser())
 
+//create meddleWare
+const verifyToken=(req,res,next)=>{
+  const token=req.cookies?.token
+  console.log(token);
+  if(token){
+    jwt.verify(token,process.env.ACCESS_TOKEN,(err,decoded)=>{
+      if(err){
+        return res.status(401).send({message:'unAuthorized Access'})
+      }
+      // console.log(decoded)
+      req.user=decoded
+      next()
+
+    })
+  }
+  if(!token){
+    return res.status(401).send({message:'unAuthorized Access'})
+  }
+}
 //connect mongoDB
 console.log(process.env.DB_PASS);
 console.log(process.env.DB_USER);
@@ -41,13 +62,19 @@ async function run() {
   try {
 //create jwt to token
     app.post('/jwt',async(req,res)=>{
-          console.log(process.env.ACCESS_TOKEN);
           const user=req.body
+          console.log(user);
           const token=jwt.sign(user,process.env.ACCESS_TOKEN,{expiresIn:'3d'})
-          res.cookie('token',token,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:process.env.NODE_ENV==='production'?'node':'strict'})
+          res.cookie('token',token,{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:process.env.NODE_ENV==='production'?'none':'strict'})
           .send({success:true})
         })
-
+//logout and delete the token
+app.get('/logOut',async(req,res)=>{
+  res.clearCookie('token',{httpOnly:true,secure:process.env.NODE_ENV==='production',sameSite:process.env.NODE_ENV==='production'?'none':'strict',
+    maxAge:0
+  })
+  .send({success:true})
+})
     app.get('/teacher',async(req,res)=>{
       const result=await teacherCollection.find().toArray()
       res.send(result)    
@@ -114,8 +141,13 @@ async function run() {
 
 
   //get data by email
-  app.get('/submitted/:email',async(req,res)=>{
+  app.get('/submitted/:email',verifyToken,async(req,res)=>{
+    const tokenEmail=req.user.email
     const email=req.params.email
+    console.log(tokenEmail,email);
+    if(tokenEmail!==email){
+      return res.status(403).send({message:'forbidden access'})
+    }
     console.log(email);
     const query={email:email}
     const result=await submittedCollection.find(query).toArray()
