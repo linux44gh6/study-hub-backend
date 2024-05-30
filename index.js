@@ -7,7 +7,7 @@ require('dotenv').config()
 var jwt = require('jsonwebtoken');
 
 const corsOption={
-  origin:['http://localhost:5173'],
+  origin:['http://localhost:5173','https://study-hub-ec69a.web.app'],
   credentials:true,
   optionSuccessStatus:200,
 }
@@ -58,6 +58,7 @@ app.get('/teacher',async(req,res)=>{
 const teacherCollection=client.db('studyHub').collection('teachers')
 const assignmentCollection=client.db('studyHub').collection('assignments')
 const submittedCollection=client.db('studyHub').collection('submitedData')
+const userCollection=client.db('studyHub').collection('user')
 async function run() {
   try {
 //create jwt to token
@@ -158,13 +159,9 @@ app.get('/assignmentCount',async(req,res)=>{
 
 
   //get data by email
-  app.get('/submitted/:email',verifyToken,async(req,res)=>{
-    const tokenEmail=req.user.email
+  app.get('/submitted/:email',async(req,res)=>{
     const email=req.params.email
     // console.log(tokenEmail,email);
-    if(tokenEmail!==email){
-      return res.status(403).send({message:'forbidden access'})
-    }
     // console.log(email);
     const query={email:email}
     const result=await submittedCollection.find(query).toArray()
@@ -182,7 +179,7 @@ app.get('/assignmentCount',async(req,res)=>{
   })
   //get pending data by id
 
-  app.get('/mark/:id',async(req,res)=>{
+  app.get('dashboard/mark/:id',async(req,res)=>{
     const id=req.params.id
     const query={_id:new ObjectId(id)}
     const result=await submittedCollection.findOne(query)
@@ -205,8 +202,58 @@ app.get('/assignmentCount',async(req,res)=>{
     res.send(result)
   })
 
+//create user 
 
-  //implement the jwt
+app.post('/user',async(req,res)=>{
+  const user=req.body
+  const query={email:user.email}
+  const existing=await userCollection.findOne(query)
+  if(existing){
+    return res.send('user already exist')
+  }
+  else{
+    const result=await userCollection.insertOne(user)
+  res.send(result)
+  }
+})
+//get the user
+app.get('/user',async(req,res)=>{
+  const result=await userCollection.find().toArray()
+  res.send(result)
+})
+  //make admin
+  app.patch('/user/admin/:id',async(req,res)=>{
+    const id=req.params.id
+    const query={_id:new ObjectId(id)}
+    const updatedDoc={
+      $set:{
+        role:'admin'
+      }
+    }
+    const result=await userCollection.updateOne(query,updatedDoc)
+    res.send(result)
+  })
+
+  //check the admin
+  app.get('/user/admin/:email',async(req,res)=>{
+    const email=req.params.email
+    const query={email:email}
+    const user=await userCollection.findOne(query)
+    let admin=false
+    if(user){
+      admin=user?.role==='admin'
+    }
+    res.send({admin})
+  })
+
+  //delete the user by admin
+  app.delete('/users/:id',async(req,res)=>{
+    const id=req.params.id
+    console.log(id);
+    const query={_id:new ObjectId(id)}
+    const result=await userCollection.deleteOne(query)
+    res.send(result)
+  })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
